@@ -34,7 +34,8 @@ public class MainActivity extends AppCompatActivity {
     EditText name, email;
     Button submit;
     TextView response;
-    static String url = "http://192.168.1.138/android_api_project/sql_set_data.php";
+    static String url = "http://localhost/android_api_project/sql_set_data.php";
+    static String get_url = "http://192.168.6.48/android_api_project/sql_get_data.php";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,12 +60,28 @@ public class MainActivity extends AppCompatActivity {
                     response.setText("Please fill all the fields");
                     return;
                 }
-                process(name.getText().toString(), email.getText().toString());
+                set_data(name.getText().toString(), email.getText().toString());
             }
         });
     }
 
-    void process(final String name, final String email){
+    void get_data(){
+        StringRequest request = new StringRequest(Request.Method.GET, get_url,
+            new Response.Listener<String>() {
+                @Override
+                public void onResponse(String s) {
+
+                }
+            },
+            new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError volleyError) {
+
+                }
+            }
+        );
+    }
+    void set_data(final String name, final String email){
         StringRequest request = new StringRequest(Request.Method.POST, url,
             new Response.Listener<String>() {
                 @Override
