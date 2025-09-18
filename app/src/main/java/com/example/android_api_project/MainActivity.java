@@ -1,11 +1,15 @@
 package com.example.android_api_project;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,6 +23,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
@@ -34,10 +39,13 @@ public class MainActivity extends AppCompatActivity {
     EditText name, email;
     Button submit;
     TextView response;
-    ImageButton refresh;
+    ImageButton refresh_btn;
+    ImageView image;
+    ProgressBar image_progress;
 
-    static String url = "http://10.0.2.2/android_api_project/sql_set_data.php";
-    static String get_url = "http://10.0.2.2/android_api_project/sql_get_data.php";
+    static String url = "http://192.168.1.138:8000/post_data/";
+    static String get_url = "http://192.168.1.138:8000/get_data";
+    static String image_url = "https://i.ibb.co.com/B52wDW1N/Screenshot-2025-09-06-040525.png";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,15 +61,19 @@ public class MainActivity extends AppCompatActivity {
         name = findViewById(R.id.name);
         email = findViewById(R.id.email);
         submit = findViewById(R.id.submit);
-        refresh = findViewById(R.id.refresh_button);
+        refresh_btn = findViewById(R.id.refresh_button);
         response = findViewById(R.id.response);
+        //image = findViewById(R.id.image);
+        //image_progress = findViewById(R.id.image_progress);
 
         get_data();
+        //get_image();
 
-        refresh.setOnClickListener(new View.OnClickListener() {
+        refresh_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 get_data();
+                //get_image();
             }
         });
 
@@ -69,7 +81,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if(name.getText().toString().isEmpty() || email.getText().toString().isEmpty()){
-                    response.setText("Please fill all the fields");
+                    Toast toast = Toast.makeText(getApplicationContext(), "Please fill all the fields", Toast.LENGTH_SHORT);
+                    toast.show();
                     return;
                 }
                 set_data(name.getText().toString(), email.getText().toString());
@@ -78,54 +91,60 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void get_data(){
-        // Use JsonObjectRequest as the PHP script returns a JSON object
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, get_url, null,
                 new Response.Listener<JSONObject>() {
                     @Override
-                    public void onResponse(JSONObject response) {
+                    public void onResponse(JSONObject response_data) {
                         try {
-                            // Check the status from the JSON response
-                            String status = response.getString("status");
+
+                            String status = response_data.getString("status");
+
                             if (status.equals("success")) {
-                                // Get the 'data' JSONArray
-                                JSONArray dataArray = response.getJSONArray("data");
-                                StringBuilder formattedData = new StringBuilder();
-                                // Loop through the array to get each user's data
+
+                                JSONArray dataArray = response_data.getJSONArray("data");
+                                if (dataArray.length() == 0){
+                                    response.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.yellow));
+                                    response.setText("No data found");
+                                    return;
+                                }
+                                StringBuilder formattedData = new StringBuilder("");
+//                                Toast toast = Toast.makeText(getApplicationContext(), "Success", Toast.LENGTH_SHORT);
+//                                toast.show();
+
                                 for (int i = 0; i < dataArray.length(); i++) {
                                     JSONObject userObject = dataArray.getJSONObject(i);
-                                    // Assuming the table has 'name' and 'email' columns
+
                                     String name = userObject.getString("name");
                                     String email = userObject.getString("email");
                                     formattedData.append("Name: ").append(name).append(", Email: ").append(email).append("\n\n");
                                 }
-                                // Display the formatted data in the TextView
-                                MainActivity.this.response.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.green));
-                                MainActivity.this.response.setText(formattedData.toString());
+
+                                response.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.green));
+                                response.setText(formattedData.toString());
+
                             } else {
-                                // Handle failure status
-                                String message = response.getString("message");
-                                MainActivity.this.response.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.red));
-                                MainActivity.this.response.setText("Status: " + status + "\nMessage: " + message);
+
+                                Toast toast = Toast.makeText(getApplicationContext(), "Error: " + status, Toast.LENGTH_SHORT);
+                                toast.show();
                             }
                         } catch (JSONException e) {
-                            // Handle JSON parsing error
-                            MainActivity.this.response.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.red));
-                            MainActivity.this.response.setText("JSON parsing error: " + e.toString());
+                            response.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.red));
+                            response.setText("JSON parsing error: " + e.toString());
                         }
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        // Handle Volley errors
                         MainActivity.this.response.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.red));
                         MainActivity.this.response.setText("Error: " + error.toString());
                     }
                 });
 
-        // Add the request to the RequestQueue.
+
         RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
         requestQueue.add(jsonObjectRequest);
+        response.setVisibility(View.VISIBLE);
     }
 
     void set_data(final String name, final String email){
@@ -138,15 +157,14 @@ public class MainActivity extends AppCompatActivity {
                             String status = jsonResponse.getString("status");
                             String message = jsonResponse.getString("message");
 
-                            if(status.equals("Success")) {
-                                // Refresh data after successful submission
+                            if(status.equals("success")) {
                                 get_data();
-                            } else {
-                                response.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.red));
-                                response.setText("Status: " + status + "\nMessage: " + message);
                             }
+                            Toast toast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT);
+                            toast.show();
+
                         } catch (JSONException e) {
-                            response.setText("Something went wrong on response : " + e.toString());
+                            response.setText("Something went wrong on response : " + e);
                         }
                     }
                 },
@@ -168,5 +186,39 @@ public class MainActivity extends AppCompatActivity {
 
         RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
         requestQueue.add(request);
+    }
+
+    void get_image(){
+        image_progress.setProgress(100);
+
+        int max_width = 0;
+        int max_height = 0;
+
+        ImageRequest imageRequest = new ImageRequest(image_url,
+                new Response.Listener<Bitmap>() {
+                    @Override
+                    public void onResponse(Bitmap bitmap) {
+                        image.setImageBitmap(bitmap);
+                    }
+                },
+
+                max_width, max_height, null,
+
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError volleyError) {
+                        image.setImageDrawable(ContextCompat.getDrawable(MainActivity.this, R.drawable.warning));
+                        image.setMaxWidth(20);
+                        image.setMaxHeight(20);
+                        Toast toast = Toast.makeText(getApplicationContext(), "image error", Toast.LENGTH_SHORT);
+                        toast.show();
+                    }
+                }
+        );
+
+        RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+        requestQueue.add(imageRequest);
+        image.setVisibility(View.VISIBLE);
+        image_progress.setVisibility(View.INVISIBLE);
     }
 }
