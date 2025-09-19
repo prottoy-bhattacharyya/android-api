@@ -1,5 +1,6 @@
 package com.example.android_api_project;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -41,14 +42,17 @@ import androidmads.library.qrgenearator.QRGEncoder;
 
 public class MainActivity extends AppCompatActivity {
     EditText name, email, qr_input;
-    Button submit, generate_qr_btn;
+    Button submit, generate_qr_btn, send_files_btn;
     TextView response;
     ImageButton refresh_btn;
     ImageView image;
     ProgressBar image_progress;
+    String test_data = "prottoy";
 
-    static String url = "http://192.168.1.138:8000/post_data/";
-    static String get_url = "http://192.168.1.138:8000/get_data";
+
+    static String host = "192.168.1.138:8000";
+    static String url = "http://" + host + "/post_data/";
+    static String get_url = "http://" + host + "/get_data";
     static String image_url = "https://i.ibb.co.com/B52wDW1N/Screenshot-2025-09-06-040525.png";
 
     @Override
@@ -56,11 +60,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
 
         name = findViewById(R.id.name);
         email = findViewById(R.id.email);
@@ -70,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
         image = findViewById(R.id.image);
         qr_input = findViewById(R.id.qr_input);
         generate_qr_btn = findViewById(R.id.generate_qr_btn);
+        send_files_btn = findViewById(R.id.send_files_btn);
 
         get_data();
         //get_image();
@@ -100,28 +100,42 @@ public class MainActivity extends AppCompatActivity {
                 generate_qr_code(qr_input.getText().toString());
             }
         });
+
+        send_files_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, send_files.class);
+                intent.putExtra("test_data", test_data);
+                startActivity(intent);
+            }
+        });
     }
 
     private void generate_qr_code(String text) {
         if (text.isEmpty()) {
             Toast.makeText(this, "Enter some text", Toast.LENGTH_SHORT).show();
+            image.setImageDrawable(ContextCompat.getDrawable(MainActivity.this, R.drawable.warning));
+            image.setMaxWidth(20);
+            image.setMaxHeight(20);
+
             return;
         }
 
         text = text.trim();
 
-        QRGEncoder qrgEncoder = new QRGEncoder(text, null, QRGContents.Type.TEXT, 200); // Reduce border size
+        QRGEncoder qrgEncoder = new QRGEncoder(text, null, QRGContents.Type.TEXT, 200);
         qrgEncoder.setColorBlack(Color.BLACK);
         qrgEncoder.setColorWhite(Color.WHITE);
-
         try {
             Bitmap bitmap = qrgEncoder.getBitmap(2);
             image.setImageBitmap(bitmap);
         } catch (Exception e){
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            image.setImageDrawable(ContextCompat.getDrawable(MainActivity.this, R.drawable.warning));
+            image.setMaxWidth(20);
+            image.setMaxHeight(20);
             return;
         }
-
     }
 
     void get_data(){
@@ -141,9 +155,7 @@ public class MainActivity extends AppCompatActivity {
                                     response.setText("No data found");
                                     return;
                                 }
-                                StringBuilder formattedData = new StringBuilder("");
-//                                Toast toast = Toast.makeText(getApplicationContext(), "Success", Toast.LENGTH_SHORT);
-//                                toast.show();
+                                StringBuilder formattedData = new StringBuilder();
 
                                 for (int i = 0; i < dataArray.length(); i++) {
                                     JSONObject userObject = dataArray.getJSONObject(i);

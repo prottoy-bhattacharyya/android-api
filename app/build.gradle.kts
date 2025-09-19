@@ -42,4 +42,5 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     implementation("com.github.androidmads:QRGenerator:1.0.5")
     implementation("com.android.volley:volley:1.2.1")
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 }
