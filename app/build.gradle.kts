@@ -40,5 +40,6 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    implementation("com.github.androidmads:QRGenerator:1.0.5")
     implementation("com.android.volley:volley:1.2.1")
 }

@@ -1,6 +1,7 @@
 package com.example.android_api_project;
 
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -35,9 +36,12 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
+import androidmads.library.qrgenearator.QRGContents;
+import androidmads.library.qrgenearator.QRGEncoder;
+
 public class MainActivity extends AppCompatActivity {
-    EditText name, email;
-    Button submit;
+    EditText name, email, qr_input;
+    Button submit, generate_qr_btn;
     TextView response;
     ImageButton refresh_btn;
     ImageView image;
@@ -63,8 +67,9 @@ public class MainActivity extends AppCompatActivity {
         submit = findViewById(R.id.submit);
         refresh_btn = findViewById(R.id.refresh_button);
         response = findViewById(R.id.response);
-        //image = findViewById(R.id.image);
-        //image_progress = findViewById(R.id.image_progress);
+        image = findViewById(R.id.image);
+        qr_input = findViewById(R.id.qr_input);
+        generate_qr_btn = findViewById(R.id.generate_qr_btn);
 
         get_data();
         //get_image();
@@ -88,6 +93,35 @@ public class MainActivity extends AppCompatActivity {
                 set_data(name.getText().toString(), email.getText().toString());
             }
         });
+
+        generate_qr_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                generate_qr_code(qr_input.getText().toString());
+            }
+        });
+    }
+
+    private void generate_qr_code(String text) {
+        if (text.isEmpty()) {
+            Toast.makeText(this, "Enter some text", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        text = text.trim();
+
+        QRGEncoder qrgEncoder = new QRGEncoder(text, null, QRGContents.Type.TEXT, 200); // Reduce border size
+        qrgEncoder.setColorBlack(Color.BLACK);
+        qrgEncoder.setColorWhite(Color.WHITE);
+
+        try {
+            Bitmap bitmap = qrgEncoder.getBitmap(2);
+            image.setImageBitmap(bitmap);
+        } catch (Exception e){
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
     }
 
     void get_data(){
